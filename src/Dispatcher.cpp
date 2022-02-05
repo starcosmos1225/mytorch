@@ -3,6 +3,8 @@
 Dispatcher::Dispatcher()
 {
     registerOPS("randn",&randn);
+    registerOPS("sigmoid",&sigmoid);
+    registerOPS("sum",&sum);
 }
 KernelFunctorPtr Dispatcher::getFunctor(std::string name)
 {

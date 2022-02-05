@@ -5,6 +5,7 @@
 #include "Autograd.h"
 #include <iostream>
 #include <sstream>
+
 // extern PyTypeObject* TensorType;
 struct PyTensor
 {
@@ -47,11 +48,10 @@ static PyObject * tensor_add(PyObject* self, PyObject* args,PyObject* unused)
     assert((args ? PyTuple_GET_SIZE(args) : 0)==1);
     auto other = PyTuple_GET_ITEM(args,0);
     Tensor* tensor_other = unpackTensor(other);
-    // std::cout<<tensor_str(self)
     assert(tensor_self->size()==tensor_other->size());
     int size = tensor_self->size();
-    auto& self_data = tensor_self->get();
-    auto& other_data = tensor_other->get();
+    auto& self_data = tensor_self->data();
+    auto& other_data = tensor_other->data();
     std::vector<double> data(size,0);
     for (int i=0;i<size;i++)
         data[i] = self_data[i]+other_data[i];
@@ -59,25 +59,22 @@ static PyObject * tensor_add(PyObject* self, PyObject* args,PyObject* unused)
     Tensor* res = new Tensor(tensor_self->shapes(),std::move(data),require_grad);
     if (require_grad)
     {
-        res->insertEdge(new AddBackward(tensor_self->getGradMeta(),tensor_other->getGradMeta()));
+        res->insertEdge(new AddBackward(tensor_self->getGradMeta(),
+                                        tensor_other->getGradMeta(),
+                                        res->getGradMeta()));
     }
     return ReturnTensor(res, self->ob_type);
 }
 
 static void tensor_destruct(PyObject* obj) {
-    // ::std::cerr<<"call destruct"<<::std::endl;
-    // PyObject* obj = type->tp_alloc(type, 0);
-    // if (obj)
+
     Tensor* tensor = unpackTensor(obj);
     delete(tensor);
     
     Py_TYPE(obj)->tp_free(obj);
-    // ::std::cerr<<"end call deconstruct"<<::std::endl;
-    // return 1;
 }
 
 static int tensor_clear(PyTensor* self) {
-    ::std::cerr<<"call clear"<<::std::endl;
     delete (self->cdata);
 
     return 1;
@@ -88,18 +85,47 @@ static PyObject *tensor_str(PyObject *obj)
     Tensor *tensor = unpackTensor(obj);
     std::stringstream ss;
     ss << tensor->toString();
-    // auto& data = tensor->get();
-    // std::cout<<"tensor.size:"<<tensor->size()<<std::endl;
-    // for (int i=0;i<tensor->size();i++)
-    //     ss<<data[i]<<" ";
-    // ss << tensor->get();
     return Py_BuildValue("s", ss.str().c_str());
 }
 
 static PyObject *tensor_backward(PyObject *obj)
 {
-    std::cout<<"begin backward"<<std::endl;
     Tensor *tensor = unpackTensor(obj);
-    backward(tensor->getGradMeta());
+    AutogradMeta* node = tensor->getGradMeta();
+    std::vector<double>& grad = node->grad();
+    grad = std::vector<double>(tensor->size(),1.0);
+    // std::cout<<"begin call backward"<<std::endl;
+    backward(node);
     Py_RETURN_NONE;
 }
+
+static PyObject *tensor_sigmoid(PyObject *obj)
+{
+    // std::cout<<"begin sigmoid"<<std::endl;
+    Tensor *tensor = unpackTensor(obj);
+    Dispatcher dispatcher = Dispatcher::singleton();
+    KernelFunctorPtr kernel = dispatcher.getFunctor("sigmoid");
+    if (!kernel)
+    {
+        Py_RETURN_NONE;
+    }
+    Tensor* out = kernel->call<Tensor*>(tensor);
+    if (out->require_grad())
+    {
+        out->insertEdge(new SigmoidBackward(tensor->getGradMeta(),
+                                        out->getGradMeta()));
+    }
+    // std::cout<<"end sigmoid"<<std::endl;
+    return packTensor(out,getTensorType());
+}
+
+static PyObject * tensor_getgrad(PyTensor *self, void *closure)
+{
+    // std::cout<<"call grad"<<std::endl;
+    AutogradMeta* gradMeta = self->cdata->getGradMeta();
+    std::string res = gradMeta->toString();
+    std::cout<<res<<std::endl;
+    // Py_INCREF(self->first);
+    return Py_BuildValue("s", res.c_str());
+}
+

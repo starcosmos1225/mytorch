@@ -1,7 +1,7 @@
 # import torch
 from torch._C import *
 import torch._C as _C
-
+import torch.nn
 from torch._Tensor import Tensor
 # import torch._Tensor
 
@@ -14,7 +14,7 @@ for name in dir(_C._VariableFunctions):
 # class Tensor(_C._TensorBase):
 #     pass
 
-print(__all__)
+# print(__all__)
 test()
 # a = Tensor()
 # print(a)

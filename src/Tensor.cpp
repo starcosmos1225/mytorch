@@ -13,7 +13,7 @@ m_data(std::move(data))
     m_ndims = m_shapes.size();
     if (require_grad)
     {
-        m_pGradMeta = new AutogradMeta();
+        m_pGradMeta = new AutogradMeta(this);
     }
 }
 
@@ -21,7 +21,7 @@ Tensor::~Tensor(){
     delete(m_pGradMeta);
 }
 
-std::vector<double>& Tensor::get()
+std::vector<double>& Tensor::data()
 {
     return m_data;
 }

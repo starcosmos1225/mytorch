@@ -1,26 +1,25 @@
 #pragma once
 #include "Node.h"
 #include "Edge.h"
-// class A
-// {
-//     public:
-//         A(){}
-//         int v;
-// };
+
+class Tensor;
 class AutogradMeta: public Node
 {
     public:
         AutogradMeta();
-        AutogradMeta(bool require_grad);
+        AutogradMeta(Tensor* tensor);
         ~AutogradMeta();
         virtual std::vector<Edge* >& getEdgeList();
-        virtual bool require_grad();
         virtual bool isLeaf();
         virtual void release();
         virtual void insertEdge(Edge* edge);
+        virtual std::vector<double>& grad();
+        virtual std::vector<double>& data();
+        std::string toString();
+
     private:
-        bool m_requireGrad;
-        // std::vector<Edge*> m_edges;
+        Tensor* m_pTensor;
+        std::vector<double> m_grad;
 };
 
 void backward(Node* node);

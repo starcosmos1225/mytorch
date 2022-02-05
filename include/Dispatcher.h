@@ -15,7 +15,6 @@ class Dispatcher{
         template <class FuncType>
         void registerOPS(std::string name, FuncType* function)
         {
-            std::cout<<"register1:"<<name<<std::endl;
             void* func = reinterpret_cast<void*>(function);
             KernelFunctorPtr funcPtr = std::make_shared<KernelFunctor>(func);
             m_kernelFunctors[name] = funcPtr;

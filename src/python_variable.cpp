@@ -13,7 +13,8 @@ PyObject* TensorTypeModule = nullptr;
 PyObject* THPVariableFunctionsModule = nullptr;
 
 static PyMethodDef torch_functions[] = {
-      {"randn", castPyCFunctionWithKeywords(THPVariable_randn), METH_VARARGS | METH_KEYWORDS | METH_STATIC, NULL}
+      {"randn", castPyCFunctionWithKeywords(THPVariable_randn), METH_VARARGS | METH_KEYWORDS | METH_STATIC, NULL},
+      {"sum", castPyCFunctionWithKeywords(THPVariable_sum), METH_VARARGS | METH_KEYWORDS | METH_STATIC, NULL}
   };
 
 void gatherTorchFunctions(std::vector<PyMethodDef>& functions)
@@ -97,7 +98,7 @@ void initFunctions(PyObject *module) {
 
 int TensorMetaType_init(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    ::std::cerr<<"call meta init"<<::std::endl;
+    // ::std::cerr<<"call meta init"<<::std::endl;
     return 1;
 }
 static PyTypeObject TensorMetaType = {
@@ -195,7 +196,13 @@ static PyMethodDef tensor_methods[] = {
   {"__add__", castPyCFunctionWithKeywords(tensor_add), METH_VARARGS, NULL},
   {"__radd__", castPyCFunctionWithKeywords(tensor_add), METH_VARARGS, NULL},
   {"backward", (PyCFunction)(void(*)(void))(tensor_backward), METH_NOARGS, NULL},
+  {"sigmoid", (PyCFunction)(void(*)(void))(tensor_sigmoid), METH_NOARGS, NULL},
     {nullptr}
+};
+
+static PyGetSetDef tensor_getseters[] = {
+    {"grad", (getter)tensor_getgrad, nullptr,"get grad",NULL},
+    {NULL}  /* Sentinel */
 };
 
 void initTensor(PyObject *module) {
@@ -206,7 +213,7 @@ void initTensor(PyObject *module) {
   PyModule_AddObject(module, "_TensorMeta",(PyObject *)&TensorMetaType);
 
   TensorBaseType.tp_methods = tensor_methods;
-
+  TensorBaseType.tp_getset = tensor_getseters;
   if (PyType_Ready(&TensorBaseType) < 0) {
     throw python_error();
   }
@@ -228,11 +235,11 @@ PyTypeObject* getTensorType()
 {
   if (TensorType==nullptr)
   {
-    std::cout<<"nullptr type"<<std::endl;
+    // std::cout<<"nullptr type"<<std::endl;
     PyObject* tensor_module = PyImport_ImportModule("torch._Tensor");
     if (!tensor_module)
     {
-        std::cerr<<"tensor_module nullptr"<<std::endl;
+        // std::cerr<<"tensor_module nullptr"<<std::endl;
         return nullptr;
     }
     TensorType = (PyTypeObject* )PyObject_GetAttrString(tensor_module, "Tensor");

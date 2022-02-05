@@ -59,3 +59,28 @@ Tensor* randn(std::vector<int> shapes, bool require_grad)
     create_randn(data);
     return new Tensor(shapes,data, require_grad);
 }
+
+Tensor* sigmoid(Tensor* input)
+{
+    // std::cout<<"call sigmoid"<<std::endl;
+    auto& data = input->data();
+    std::vector<double> new_data(data.size(),0.0);
+    // std::cout<<"call sigmoid size:"<<data.size()<<std::endl;
+    for (unsigned int i=0;i<data.size();i++)
+    {
+        new_data[i] = 1.0/(1.0+std::exp(-data[i]));
+    }
+    return new Tensor(input->shapes(), new_data, input->require_grad());
+}
+
+Tensor* sum(Tensor* input)
+{
+    // std::cout<<"call sum"<<std::endl;
+    auto& data = input->data();
+    std::vector<double> new_data(1,0.0);
+    for (unsigned int i=0;i<data.size();i++)
+    {
+        new_data[0] += data[i]; 
+    }
+    return new Tensor({1}, new_data, input->require_grad());
+}
