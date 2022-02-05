@@ -1,0 +1,2 @@
+/Users/huxingyu/Xcode/mytorch/build/CMakeFiles/rebuild_cache.dir
+/Users/huxingyu/Xcode/mytorch/build/CMakeFiles/edit_cache.dir
